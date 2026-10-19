@@ -24,13 +24,13 @@ public class Constants {
     public static PinpointConfig localizerConfig = new PinpointConfig(c -> {
         c.name.set("pinpoint");
         c.podType.set(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD);
-        c.xPodOffset.set(6.670734675850455);
-        c.yPodOffset.set(-2.313111673189899);
+        c.xPodOffset.set(1.1651408578467182);
+        c.yPodOffset.set(0.41651170084795613);
         c.xPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
         c.yPodDirection.set(GoBildaPinpointDriver.EncoderDirection.FORWARD);
         c.globalDistanceUnit.set(DistanceUnit.INCH);
         c.offsetUnits.set(DistanceUnit.INCH);
-    });//
+    });
     public static Follower create(HardwareMap h) {
         // return new Follower(Drivetrain, Localizer, Foresight);
         return null;
