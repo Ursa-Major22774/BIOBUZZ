@@ -1,11 +1,13 @@
-package org.firstinspires.ftc.teamcode.teleOp;
+package org.firstinspires.ftc.teamcode.opModes;
+
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
 import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
 
 import com.pedropathing.follower.Follower;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
@@ -20,11 +22,13 @@ public class Test {
     //@Override
     public void init() {
         follower = Constants.create(hardwareMap); //PedroPathing follower setup
-        telemetry.addData("Does it work?","Huzzah!"); //telemetry update test
-        telemetry.update();
 
         intake = new Intake(hardwareMap);
         transfer = new Transfer(hardwareMap);
+
+        telemetry.addData("Does it work?","Huzzah!"); //telemetry update test
+        telemetry.addData("Status", "Initialized");
+        telemetry.update();
     }
     //@Override
     public void start() {
