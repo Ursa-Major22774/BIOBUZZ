@@ -13,7 +13,7 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Transfer;
 @TeleOp(name="Testing OpMode")
-public class Test {
+public class Test extends OpMode {
 
     //initializations
     private Intake intake;
@@ -38,8 +38,8 @@ public class Test {
     //@Override
     public void loop() {
         double forward = -gamepad1.left_stick_y; //drive train updates each loop
-        double lateral = gamepad1.left_stick_x;
-        double turn = gamepad1.right_stick_x;
+        double lateral = -gamepad1.left_stick_x;
+        double turn = -gamepad1.right_stick_x;
         follower.manual(forward, lateral, turn);
         follower.update();
 
