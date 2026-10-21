@@ -11,6 +11,8 @@ import com.pedropathing.follower.Follower;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
+import org.firstinspires.ftc.teamcode.subsystems.Shooter;
+import org.firstinspires.ftc.teamcode.subsystems.Arm;
 import org.firstinspires.ftc.teamcode.subsystems.Transfer;
 @TeleOp(name="Testing OpMode")
 public class Test extends OpMode {
@@ -18,6 +20,8 @@ public class Test extends OpMode {
     //initializations
     private Intake intake;
     private Transfer transfer;
+    private Shooter shooter;
+    private Arm arm;
     private Follower follower;
     //@Override
     public void init() {
@@ -25,6 +29,8 @@ public class Test extends OpMode {
 
         intake = new Intake(hardwareMap);
         transfer = new Transfer(hardwareMap);
+        shooter = new Shooter(hardwareMap);
+        arm = new Arm(hardwareMap);
 
         telemetry.addData("Does it work?","Huzzah!"); //telemetry update test
         telemetry.addData("Status", "Initialized");
@@ -57,6 +63,20 @@ public class Test extends OpMode {
         } else {
             transfer.stop();
             telemetry.addData("Transfer T","Transfer Stopped");
+        }
+        if (gamepad1.left_bumper) {
+            shooter.shoot();
+            telemetry.addData("Shooter T","Shooter Triggered");
+        } else {
+            shooter.stop();
+            telemetry.addData("Shooter T","Shooter Stopped");
+        }
+        if (gamepad1.a) {
+            arm.raise();
+            telemetry.addData("Arm T","Arm Raised");
+        } else {
+            arm.lower();
+            telemetry.addData("Arm T","Arm Lowered");
         }
         telemetry.update();
     }
