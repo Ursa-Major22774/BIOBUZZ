@@ -12,7 +12,7 @@ public class Arm {
 
     public Arm(HardwareMap hardwareMap) {
         arm = hardwareMap.get(DcMotorEx.class, "arm");
-        arm.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+        arm.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         arm.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
         arm.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
         arm.setPower(ARM_POWER);

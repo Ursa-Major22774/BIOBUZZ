@@ -13,7 +13,7 @@ public class Intake {
         intakeMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
     }
     public void intake() {
-        intakeMotor.setPower(INTAKE_POWER);
+        intakeMotor.setPower(-INTAKE_POWER);
     }
     public void stop() {
         intakeMotor.setPower(0);
