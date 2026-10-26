@@ -6,11 +6,14 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
+
 public class Arm {
+
     public /*static*/ int ARM_POSITION = -200;
     public static double ARM_VELOCITY = 200;
     public static double ARM_POWER = 1;
     private final DcMotorEx arm;
+    private final PIDFC
     //private final Limelight3A limelight;
     public static double tx;
     public static double ty;
