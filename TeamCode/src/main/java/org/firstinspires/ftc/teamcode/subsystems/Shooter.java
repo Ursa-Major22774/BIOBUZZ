@@ -4,7 +4,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Shooter {
-    public static double SHOOTER_POWER = 0.5;
+    public static double SHOOTER_POWER = 1;
     private final DcMotorEx shooterMotor1;
     private final DcMotorEx shooterMotor2;
 

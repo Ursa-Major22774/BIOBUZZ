@@ -49,6 +49,13 @@ public class Test extends OpMode {
         follower.manual(forward, lateral, turn);
         follower.update();
 
+        //limelight testing code
+        /*double[] camResults = arm.cameraTest();
+        telemetry.addData("Cam Tx", camResults[0]);
+        telemetry.addData("Cam Ty", camResults[1]);
+        telemetry.addData("Cam Ta", camResults[2]);
+         */
+
         //control triggers
         if (gamepad1.left_trigger > 0.1) { //intake trigger
             intake.intake();
@@ -57,27 +64,38 @@ public class Test extends OpMode {
             intake.stop();
             telemetry.addData("Intake T","Intake Stopped");
         }
-        if (gamepad1.right_trigger > 0.1) {
+        if (gamepad1.right_trigger > 0.1) { //transfer
             transfer.transfer();
             telemetry.addData("Transfer T","Transfer Triggered");
         } else {
             transfer.stop();
             telemetry.addData("Transfer T","Transfer Stopped");
         }
-        if (gamepad1.left_bumper) {
+        if (gamepad1.left_bumper) { //shooter
             shooter.shoot();
             telemetry.addData("Shooter T","Shooter Triggered");
         } else {
             shooter.stop();
             telemetry.addData("Shooter T","Shooter Stopped");
         }
-        if (gamepad1.a) {
+        if (gamepad1.a) { //arm
             arm.raise();
             telemetry.addData("Arm T","Arm Raised");
         } else {
             arm.lower();
             telemetry.addData("Arm T","Arm Lowered");
         }
+
+        //testing code; remove when no longer relevant
+        if (gamepad1.x) { //adjust arm position manually
+            arm.manualIncreasePos();
+        }
+        if (gamepad1.b) {
+            arm.manualDecreasePos();
+        }
+        telemetry.addData("Arm Position",arm.ARM_POSITION);
+
+        //sends all the telemetry data gathered so far
         telemetry.update();
     }
 }

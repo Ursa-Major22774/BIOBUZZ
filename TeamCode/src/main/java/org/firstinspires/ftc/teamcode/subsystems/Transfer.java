@@ -9,7 +9,7 @@ public class Transfer {
     private CRServo servoOne = null;
     private CRServo servoTwo = null;
 
-    public static double TRANSFER_POWER = 0.25;
+    public static double TRANSFER_POWER = 1;
     public Transfer(HardwareMap hardwareMap) {
         servoOne = hardwareMap.get(CRServo.class,"transferServo1"); //maps transfer servos to its hardware map
         servoTwo = hardwareMap.get(CRServo.class, "transferServo2");
