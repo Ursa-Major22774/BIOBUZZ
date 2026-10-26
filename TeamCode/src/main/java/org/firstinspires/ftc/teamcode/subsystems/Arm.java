@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.subsystems;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import org.firstinspires.ftc.teamcode.resources.PIDFController;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -13,7 +14,7 @@ public class Arm {
     public static double ARM_VELOCITY = 200;
     public static double ARM_POWER = 1;
     private final DcMotorEx arm;
-    private final PIDFC
+    private final PIDFController armController;
     //private final Limelight3A limelight;
     public static double tx;
     public static double ty;
@@ -51,6 +52,9 @@ public class Arm {
     public void lower() {
         arm.setTargetPosition(0);
         arm.setVelocity(0);
+    }
+    public int getARM_POSITION() {
+        
     }
     //testing code; remove when no longer relevant.
     public void manualDecreasePos() {
