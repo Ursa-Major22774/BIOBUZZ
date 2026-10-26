@@ -1,10 +1,9 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
-import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.hardware.limelightvision.LLResult;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.teamcode.resources.PIDFController;
 
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 
@@ -25,14 +24,13 @@ public class Arm {
         //Limelight initialization
         //limelight = hardwareMap.get(Limelight3A.class, "limelight");
         //limelight.start();
-
+        armController=new PIDFController(0.0015,0,0,0.32);
         //Motor initialization
         arm = hardwareMap.get(DcMotorEx.class, "arm");
         arm.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
         arm.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER); //resets encoder position on initialization
-        arm.setTargetPosition(0);
-        arm.setMode(DcMotorEx.RunMode.RUN_TO_POSITION); //allows motor to hold a set position.
-        arm.setPower(ARM_POWER);
+        arm.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER); //allows motor to hold a set position.
+        arm.setDirection(DcMotorSimple.Direction.REVERSE);
 
     }
     /*public double[] cameraTest() {
@@ -45,16 +43,21 @@ public class Arm {
         camValues[2] = ta;
         return camValues;
     } */
-    public void raise() {
-        arm.setVelocity(ARM_VELOCITY);
-        arm.setTargetPosition(ARM_POSITION);
+    public void setPosition(int targetPos){
+        arm.setPower(armController.calculate(arm.getCurrentPosition(),targetPos));
     }
-    public void lower() {
-        arm.setTargetPosition(0);
-        arm.setVelocity(0);
+    public void setPower(double motorPower){
+        arm.setPower(motorPower);
     }
-    public int getARM_POSITION() {
-        
+
+    public void stop(){
+        arm.setPower(0);
+    }
+    public int getPosition() {
+        return arm.getCurrentPosition();
+    }
+    public double getMotorPower() {
+        return arm.getPower();
     }
     //testing code; remove when no longer relevant.
     public void manualDecreasePos() {

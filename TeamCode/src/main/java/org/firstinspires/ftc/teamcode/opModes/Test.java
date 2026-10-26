@@ -3,10 +3,6 @@ package org.firstinspires.ftc.teamcode.opModes;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.gamepad1;
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
-import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.telemetry;
-
 import com.pedropathing.follower.Follower;
 
 import org.firstinspires.ftc.teamcode.pedro.Constants;
@@ -79,13 +75,13 @@ public class Test extends OpMode {
             telemetry.addData("Shooter T","Shooter Stopped");
         }
         if (gamepad1.a) { //arm
-            arm.raise();
+            arm.setPosition(150);
             telemetry.addData("Arm T","Arm Raised");
         } else {
-            arm.lower();
+            arm.stop();
             telemetry.addData("Arm T","Arm Lowered");
         }
-
+        telemetry.addData("armPosition", arm.getPosition());
         //testing code; remove when no longer relevant
         if (gamepad1.x) { //adjust arm position manually
             arm.manualIncreasePos();
@@ -94,7 +90,7 @@ public class Test extends OpMode {
             arm.manualDecreasePos();
         }
         telemetry.addData("Arm Position",arm.ARM_POSITION);
-
+        telemetry.addData("Arm Power", arm.getMotorPower());
         //sends all the telemetry data gathered so far
         telemetry.update();
     }
