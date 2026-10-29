@@ -19,6 +19,9 @@ public class Test extends OpMode {
     private Shooter shooter;
     private Arm arm;
     private Follower follower;
+
+    double TurningMult = 1;
+
     //@Override
     public void init() {
         follower = Constants.create(hardwareMap); //PedroPathing follower setup
@@ -40,7 +43,7 @@ public class Test extends OpMode {
     public void loop() {
         double forward = -gamepad1.left_stick_y; //drive train updates each loop
         double lateral = -gamepad1.left_stick_x;
-        double turn = -gamepad1.right_stick_x;
+        double turn = -gamepad1.right_stick_x*TurningMult; //adjusts turning rate based on if shooting or not
         follower.manual(forward, lateral, turn);
         follower.update();
 
@@ -54,6 +57,7 @@ public class Test extends OpMode {
         //control triggers
         //Prefered control map once finalized: LT for intake, RT for shooter, down arrow for ball flush, standard movement controls, Y for arm trim up, A for arm trim down.
         if (gamepad1.left_trigger > 0.1) { //intake trigger
+            arm.zero();
             intake.intake();
             transfer.transfer();
             telemetry.addData("Intake:","Triggered");
@@ -63,11 +67,13 @@ public class Test extends OpMode {
             telemetry.addData("Intake:","Stopped");
         }
         if (gamepad1.right_trigger > 0.1) { //shooter
+            TurningMult = 0.333;
             shooter.shoot();
             transfer.transfer();
             arm.openGate();
             telemetry.addData("Shooter:","Triggered");
         } else {
+            TurningMult = 1;
             shooter.stop();
             transfer.stop();
             arm.closeGate();
@@ -106,13 +112,16 @@ public class Test extends OpMode {
         if (gamepad1.dpad_left) {
             arm.targetAdjustment();
         }
-        telemetry.addData("Arm Position",arm.ARM_POSITION);
         telemetry.addData("Arm Power", arm.getMotorPower()); */
         telemetry.addData("Arm Position", arm.getPosition());
-
+        telemetry.addData("Target Position", arm.TargetPos);
+        telemetry.addData("Sensor?", arm.MagSenseisPressed);
 
         //sets arm position
         arm.setPosition(arm.TargetPos);
+
+        //mag sensor test
+        arm.sensorCheck();
 
         //sends all the telemetry data gathered so far
         telemetry.update();

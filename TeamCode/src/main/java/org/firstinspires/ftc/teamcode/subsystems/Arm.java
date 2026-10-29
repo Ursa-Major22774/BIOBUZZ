@@ -37,6 +37,7 @@ public class Arm {
 
     // Telemetry Variables
     public boolean detectsAprilTag = false;
+    public boolean MagSenseisPressed = false;
 
     //PIDF adjustment variables, keep for potential future use.
     /*
@@ -112,8 +113,15 @@ public class Arm {
     public void lowerArm() {
         TargetPos -= 1;
     }
+    public void sensorCheck() {
+        if (zeroSensor.isPressed()) {
+            MagSenseisPressed = true;
+        } else {
+            MagSenseisPressed = false;
+        }
+    }
     public void zero() {
-        while (!zeroSensor.isPressed()) {
+        while (MagSenseisPressed) {
             TargetPos -= 1;
         }
         TargetPos = 0;
