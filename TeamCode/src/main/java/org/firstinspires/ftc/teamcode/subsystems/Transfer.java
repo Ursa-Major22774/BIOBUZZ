@@ -18,7 +18,10 @@ public class Transfer {
     public void transfer() {
         servoOne.setPower(-TRANSFER_POWER); //sets servo powers in opposite directions when activated.
         servoTwo.setPower(TRANSFER_POWER);
-
+    }
+    public void flush() {
+        servoOne.setPower(TRANSFER_POWER);
+        servoTwo.setPower(-TRANSFER_POWER);
     }
     public void stop() {
         servoOne.setPower(0); //resets to idle when stopped

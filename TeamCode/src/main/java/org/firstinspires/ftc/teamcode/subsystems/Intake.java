@@ -15,6 +15,7 @@ public class Intake {
     public void intake() {
         intakeMotor.setPower(INTAKE_POWER);
     }
+    public void flush() {intakeMotor.setPower(-INTAKE_POWER);}
     public void stop() {
         intakeMotor.setPower(0);
     }

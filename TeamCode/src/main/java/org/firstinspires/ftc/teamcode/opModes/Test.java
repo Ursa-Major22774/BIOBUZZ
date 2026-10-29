@@ -28,14 +28,13 @@ public class Test extends OpMode {
         shooter = new Shooter(hardwareMap);
         arm = new Arm(hardwareMap);
 
-        telemetry.addData("Does it work?","Huzzah!"); //telemetry update test
         telemetry.addData("Status", "Initialized");
         telemetry.update();
     }
     //@Override
     public void start() {
-        telemetry.addData("Going?", "I'm Goin'"); //telemetry update test
-        telemetry.update();
+        arm.closeGate();
+        arm.zero();
     }
     //@Override
     public void loop() {
@@ -56,46 +55,47 @@ public class Test extends OpMode {
         //Prefered control map once finalized: LT for intake, RT for shooter, down arrow for ball flush, standard movement controls, Y for arm trim up, A for arm trim down.
         if (gamepad1.left_trigger > 0.1) { //intake trigger
             intake.intake();
-            telemetry.addData("Intake T","Intake Triggered");
+            transfer.transfer();
+            telemetry.addData("Intake:","Triggered");
         } else {
             intake.stop();
-            telemetry.addData("Intake T","Intake Stopped");
-        }
-        if (gamepad1.right_trigger > 0.1) { //transfer
-            transfer.transfer();
-            telemetry.addData("Transfer T","Transfer Triggered");
-        } else {
             transfer.stop();
-            telemetry.addData("Transfer T","Transfer Stopped");
+            telemetry.addData("Intake:","Stopped");
         }
-        if (gamepad1.left_bumper) { //shooter
+        if (gamepad1.right_trigger > 0.1) { //shooter
             shooter.shoot();
-            telemetry.addData("Shooter T","Shooter Triggered");
+            transfer.transfer();
+            arm.openGate();
+            telemetry.addData("Shooter:","Triggered");
         } else {
             shooter.stop();
-            telemetry.addData("Shooter T","Shooter Stopped");
+            transfer.stop();
+            arm.closeGate();
+            telemetry.addData("Shooter:","Stopped");
         }
-        if (gamepad1.a) { //arm
-            arm.setPosition(arm.TargetPos);
-            telemetry.addData("Arm T","Arm Raised");
-        } else {
-            arm.stop();
-            telemetry.addData("Arm T","Arm Lowered");
+        if (gamepad1.dpad_down) { //Flush balls.
+            shooter.stop();
+            transfer.flush();
+            intake.flush();
         }
-        telemetry.addData("Arm Position", arm.getPosition());
+
+        if (gamepad1.y) { //Move arm.
+            arm.raiseArm();
+        } else if (gamepad1.a) {
+            arm.lowerArm();
+        } else if (gamepad1.b) {
+            arm.zero();
+        }
 
         //testing code; remove when no longer relevant
-        if (gamepad1.x) { //adjust arm position manually
-            arm.manualIncreasePos();
-        }
-        if (gamepad1.b) {
-            arm.manualDecreasePos();
-        }
-        //telemetry.addData("kp:", arm.kp);
-        //telemetry.addData("ki:", arm.ki);
-        //telemetry.addData("kd:", arm.kd);
-        //telemetry.addData("kf:", arm.kf);
-        //telemetry.addData("Target Variable:", arm.AdjVar);
+
+        //PIDF adjustment code. Keep for potential future use. Activate sibling code in arm for functionality.
+        /*
+        telemetry.addData("kp:", arm.kp);
+        telemetry.addData("ki:", arm.ki);
+        telemetry.addData("kd:", arm.kd);
+        telemetry.addData("kf:", arm.kf);
+        telemetry.addData("Target Variable:", arm.AdjVar);
         telemetry.addData("Target Arm Position",arm.TargetPos);
         if (gamepad1.dpad_up) {
             arm.valueAdjustmentPos();
@@ -106,9 +106,13 @@ public class Test extends OpMode {
         if (gamepad1.dpad_left) {
             arm.targetAdjustment();
         }
+        telemetry.addData("Arm Position",arm.ARM_POSITION);
+        telemetry.addData("Arm Power", arm.getMotorPower()); */
+        telemetry.addData("Arm Position", arm.getPosition());
 
-        //telemetry.addData("Arm Position",arm.ARM_POSITION);
-        telemetry.addData("Arm Power", arm.getMotorPower());
+
+        //sets arm position
+        arm.setPosition(arm.TargetPos);
 
         //sends all the telemetry data gathered so far
         telemetry.update();

@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Shooter {
     public static double SHOOTER_POWER = 1;
+    public static double IDLE_POWER = 0.333;
     private final DcMotorEx shooterMotor1;
     private final DcMotorEx shooterMotor2;
 
@@ -21,7 +22,7 @@ public class Shooter {
         shooterMotor2.setPower(SHOOTER_POWER);
     }
     public void stop() {
-        shooterMotor1.setPower(0);
-        shooterMotor2.setPower(0);
+        shooterMotor1.setPower(-IDLE_POWER);
+        shooterMotor2.setPower(IDLE_POWER);
     }
 }

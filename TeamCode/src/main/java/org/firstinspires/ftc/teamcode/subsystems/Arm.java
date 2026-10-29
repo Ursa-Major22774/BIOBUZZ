@@ -2,19 +2,33 @@ package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.teamcode.resources.PIDFController;
-
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.hardware.limelightvision.LLResult;
+
+import com.qualcomm.robotcore.hardware.Servo;
+
+import com.qualcomm.robotcore.hardware.TouchSensor;
+
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Arm {
 
-    public /*static*/ int ARM_POSITION = -200;
+    //Arm Motor
+    public int TargetPos = 0;
     public static double ARM_VELOCITY = 200;
     public static double ARM_POWER = 1;
     private final DcMotorEx arm;
     private final PIDFController armController;
+
+    //Sensors
+    private final TouchSensor zeroSensor;
+
+    //Gate
+    private final Servo gateServo;
+
+    //Limelight
     private final Limelight3A limelight;
     public static double tx;
     public static double ty;
@@ -24,13 +38,14 @@ public class Arm {
     // Telemetry Variables
     public boolean detectsAprilTag = false;
 
-    //adjustment variables, remove when no longer relevant
+    //PIDF adjustment variables, keep for potential future use.
+    /*
     public double kp = 0.0034;
     public double ki = 0.0005;
     public double kd = 0.0002;
     public double kf = 0.002;
     public String AdjVar = "kp";
-    public int TargetPos = 150;
+     */
 
     public Arm(HardwareMap hardwareMap) {
         //Limelight initialization
@@ -38,6 +53,13 @@ public class Arm {
         limelight.start();
         limelight.pipelineSwitch(0);
         limelight.deleteSnapshots();
+
+        //Sensor initialization
+        zeroSensor = hardwareMap.get(TouchSensor.class, "zeroSensor");
+
+        //Servo initialization
+        gateServo = hardwareMap.get(Servo.class, "gateServo");
+        gateServo.setPosition(0);
 
         //Motor initialization
         armController=new PIDFController(0.0034,0.0005,0.0002,0.002);// kp = power, ki = error, kd = break, kf = gravity offset,
@@ -75,13 +97,29 @@ public class Arm {
     public double getMotorPower() {
         return arm.getPower();
     }
+    public void openGate() {
+        gateServo.setPosition(0.25);
+    }
+    public void closeGate() {
+        gateServo.setPosition(0);
+    }
     //testing code; remove when no longer relevant.
-    public void manualDecreasePos() {
-        ARM_POSITION += 1;
+
+    //manual arm adjustment code for LM1
+    public void raiseArm() {
+        TargetPos += 1;
     }
-    public void manualIncreasePos() {
-        ARM_POSITION -= 1;
+    public void lowerArm() {
+        TargetPos -= 1;
     }
+    public void zero() {
+        while (!zeroSensor.isPressed()) {
+            TargetPos -= 1;
+        }
+        TargetPos = 0;
+    }
+    //Sister code for PIDF adjustment. Also activate opmode sister code.
+    /*
     public void valueAdjustmentPos() {
         if (AdjVar.equals("kp")) {
             kp += 0.00005;
@@ -137,5 +175,6 @@ public class Arm {
             AdjVar = "kp";
         }
     }
+     */
 
 }
