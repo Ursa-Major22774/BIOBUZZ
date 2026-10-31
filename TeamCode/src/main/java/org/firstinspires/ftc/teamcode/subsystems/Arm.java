@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
+import android.telephony.CarrierConfigManager;
+
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import org.firstinspires.ftc.teamcode.resources.PIDFController;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
@@ -16,10 +18,10 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public class Arm {
 
     //Arm Motor
-    public int TargetPos = 0;
+    //public int TargetPos = 100;
     public static double ARM_VELOCITY = 200;
     public static double ARM_POWER = 1;
-    private final DcMotorEx arm;
+    private final DcMotorEx armMotor;
     private final PIDFController armController;
 
     //Sensors
@@ -51,9 +53,9 @@ public class Arm {
     public Arm(HardwareMap hardwareMap) {
         //Limelight initialization
         limelight = hardwareMap.get(Limelight3A.class, "Limelight");
-        limelight.start();
-        limelight.pipelineSwitch(0);
-        limelight.deleteSnapshots();
+        //limelight.start();
+        //limelight.pipelineSwitch(0);
+        //limelight.deleteSnapshots();
 
         //Sensor initialization
         zeroSensor = hardwareMap.get(TouchSensor.class, "zeroSensor");
@@ -64,12 +66,11 @@ public class Arm {
 
         //Motor initialization
         armController=new PIDFController(0.0034,0.0005,0.0002,0.002);// kp = power, ki = error, kd = break, kf = gravity offset,
-        arm = hardwareMap.get(DcMotorEx.class, "arm");
-        arm.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
-        arm.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER); //resets encoder position on initialization
-        arm.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER); //allows motor to hold a set position.
-        arm.setDirection(DcMotorSimple.Direction.REVERSE);
-
+        armMotor = hardwareMap.get(DcMotorEx.class, "arm");
+        armMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE);
+        armMotor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER); //resets encoder position on initialization
+        armMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER); //allows motor to hold a set position.
+        armMotor.setDirection(DcMotorSimple.Direction.REVERSE);
     }
     public double[] cameraTest() {
         LLResult result = limelight.getLatestResult();
@@ -83,36 +84,29 @@ public class Arm {
     }
 
     public void setPosition(int targetPos){
-        arm.setPower(armController.calculate(arm.getCurrentPosition(),targetPos));
+        armMotor.setPower(armController.calculate(armMotor.getCurrentPosition(),targetPos));
     }
     public void setPower(double motorPower){
-        arm.setPower(motorPower);
+        armMotor.setPower(motorPower);
     }
 
     public void stop(){
-        arm.setPower(0);
+        armMotor.setPower(0);
     }
     public int getPosition() {
-        return arm.getCurrentPosition();
+        return armMotor.getCurrentPosition();
     }
     public double getMotorPower() {
-        return arm.getPower();
+        return armMotor.getPower();
     }
     public void openGate() {
-        gateServo.setPosition(0.25);
+        gateServo.setPosition(0);
     }
     public void closeGate() {
-        gateServo.setPosition(0);
+        gateServo.setPosition(0.25);
     }
     //testing code; remove when no longer relevant.
 
-    //manual arm adjustment code for LM1
-    public void raiseArm() {
-        TargetPos += 1;
-    }
-    public void lowerArm() {
-        TargetPos -= 1;
-    }
     public void sensorCheck() {
         if (zeroSensor.isPressed()) {
             MagSenseisPressed = true;
@@ -121,11 +115,8 @@ public class Arm {
         }
     }
     public void zero() {
-        while (MagSenseisPressed) {
-            TargetPos -= 1;
-        }
-        TargetPos = 0;
     }
+
     //Sister code for PIDF adjustment. Also activate opmode sister code.
     /*
     public void valueAdjustmentPos() {

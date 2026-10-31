@@ -1,59 +1,77 @@
 package org.firstinspires.ftc.teamcode.opModes;
 
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.pedropathing.follower.Follower;
+import org.firstinspires.ftc.teamcode.pedro.Constants;
+
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.math.Pose;
-import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import com.pedropathing.follower.Follower;
-import com.qualcomm.robotcore.robocol.Command;
+import static com.pedropathing.api.Paths.*;
+import com.pedropathing.paths.Path;
 
-import org.firstinspires.ftc.teamcode.pedro.Constants;
+import com.pedropathing.ivy.Command;
+import com.pedropathing.ivy.Scheduler;
+import static com.pedropathing.ivy.Scheduler.schedule;
+import static com.pedropathing.ivy.pedro.PedroCommands.follow;
+import static com.pedropathing.ivy.groups.Groups.sequential;
+
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
 import org.firstinspires.ftc.teamcode.subsystems.Arm;
 import org.firstinspires.ftc.teamcode.subsystems.Transfer;
 @Autonomous(name="Test Auto")
 public class Auto_Test extends OpMode {
-    //Follower
     private Follower follower;
-    private final PoseFactory poseFactory = PoseFactory.degrees();
-    private final Pose start = poseFactory.of(56, 8, 90);
-    private final Pose path1 = poseFactory.of(55.3054, 30.0863, 180);
+    private final PoseFactory p = PoseFactory.degrees();
 
-    //initializations
-    private Intake intake;
-    private Transfer transfer;
-    private Shooter shooter;
-    private Arm arm;
-
-    //@Override
+    //Autonomous Poses
+    //Each line (pose to pose) should be assigned its own method (see below).
+    private final Pose startPose = p.of(0, 0, 0);
+    private final Pose testPose = p.of(0, 20, 0);
+    private final Pose endPose = p.of(1, 20, 0);
+    @Override
     public void init() {
-        follower = Constants.create(hardwareMap); //PedroPathing follower setup
-
-        intake = new Intake(hardwareMap);
-        transfer = new Transfer(hardwareMap);
-        shooter = new Shooter(hardwareMap);
-        arm = new Arm(hardwareMap);
-
-        telemetry.addData("Does it work?", "Huzzah!"); //telemetry update test
-        telemetry.addData("Status", "Initialized");
-        telemetry.update();
+        Scheduler.reset();
+        follower = Constants.create(hardwareMap);
+        follower.setPose(startPose);
+        follower.update();
     }
-
-    //@Override
+    @Override
     public void start() {
-        telemetry.addData("Going?", "I'm Goin'"); //telemetry update test
+        schedule(autoRoutine());
+        schedule(follow(follower, park()));
+    }
+    private Command autoRoutine() {
+        return sequential(
+                follow(follower, pathTest()),
+                // Add mechanism commands here.
+                follow(follower, park())
+        );
+    }
+    @Override
+    public void loop() {
+        follower.update();
+        Scheduler.execute();
+
+        telemetry.addData("x", follower.pose().x());
+        telemetry.addData("y", follower.pose().y());
+        telemetry.addData("heading", follower.pose().heading());
+
+        if (follower.currentPath() != null) {
+            telemetry.addData("Current path distance remaining", follower.distanceToEndpoint());
+            telemetry.addData("Path number", follower.pathIndex());
+        }
+
         telemetry.update();
     }
-    //@Override
-    public void loop() {
-        for (int i = 0; i >= 50; i++) {
-            arm.raiseArm();
-        }
-        for (int i = 0; i >= 50; i++) {
-            arm.lowerArm();
-        }
-        arm.zero();
+
+    //Pose methods
+    private Path park() {
+        return line(testPose, endPose).linear(testPose, endPose);
+    }
+    private Path pathTest() {
+        return line(startPose, testPose).linear(startPose, testPose);
     }
 }
