@@ -8,14 +8,21 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.math.Pose;
 
-import static com.pedropathing.api.Paths.*;
-import com.pedropathing.paths.Path;
+import com.pedropathing.utils.Timer;
 
+import static com.pedropathing.api.Paths.*;
+import static java.lang.Thread.sleep;
+
+import com.pedropathing.paths.Path;
+import com.qualcomm.robotcore.util.ElapsedTime;
+
+/*
 import com.pedropathing.ivy.Command;
 import com.pedropathing.ivy.Scheduler;
 import static com.pedropathing.ivy.Scheduler.schedule;
 import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import static com.pedropathing.ivy.groups.Groups.sequential;
+ */
 
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
@@ -25,35 +32,62 @@ import org.firstinspires.ftc.teamcode.subsystems.Transfer;
 public class Auto_Test extends OpMode {
     private Follower follower;
     private final PoseFactory p = PoseFactory.degrees();
+    private int stateMachine = 0;
 
     //Autonomous Poses
     //Each line (pose to pose) should be assigned its own method (see below).
     private final Pose startPose = p.of(0, 0, 0);
     private final Pose testPose = p.of(0, 20, 0);
-    private final Pose endPose = p.of(1, 20, 0);
+    //private final Pose endPose = p.of(1, 20, 0);
     @Override
     public void init() {
-        Scheduler.reset();
+        //Scheduler.reset();
         follower = Constants.create(hardwareMap);
         follower.setPose(startPose);
         follower.update();
     }
     @Override
     public void start() {
-        schedule(autoRoutine());
-        schedule(follow(follower, park()));
+        ElapsedTime testTimer = new ElapsedTime();
+        double forward = 0.5;
+        double lateral = 0;
+        double turn = 0; //adjusts turning rate based on if shooting or not
+        follower.manual(forward, lateral, turn);
+        follower.update();
+        //Thread.sleep(2000);
+        while (testTimer.milliseconds()<2000) {
+            telemetry.addData("Timer:",testTimer.milliseconds());
+            telemetry.update();
+        }
+        follower.manual(0,0,0);
+        follower.update();
+        //schedule(autoRoutine());
+        //schedule(follow(follower, pathTest()));
     }
+    /*
     private Command autoRoutine() {
         return sequential(
-                follow(follower, pathTest()),
+                follow(follower, pathTest())
                 // Add mechanism commands here.
-                follow(follower, park())
+                //follow(follower, park())
         );
     }
+     */
     @Override
     public void loop() {
+        switch (stateMachine) {
+            case 0:
+                follower.follow(pathTest());
+                if (!follower.isBusy()) {
+                    stateMachine += 1;
+                }
+                break;
+            case 1:
+                follower.follow(pathTest());
+                break;
+        }
         follower.update();
-        Scheduler.execute();
+        //Scheduler.execute();
 
         telemetry.addData("x", follower.pose().x());
         telemetry.addData("y", follower.pose().y());
@@ -68,9 +102,11 @@ public class Auto_Test extends OpMode {
     }
 
     //Pose methods
+    /*
     private Path park() {
         return line(testPose, endPose).linear(testPose, endPose);
     }
+     */
     private Path pathTest() {
         return line(startPose, testPose).linear(startPose, testPose);
     }

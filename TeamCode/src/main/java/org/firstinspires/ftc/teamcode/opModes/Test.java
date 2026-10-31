@@ -139,6 +139,7 @@ public class Test extends OpMode {
         arm.sensorCheck();
 
         //Shooter telemetry (Removable)
+
         telemetry.addData("Shooter Power:",shooter.getMotorPower());
 
         //sends all the telemetry data gathered so far
