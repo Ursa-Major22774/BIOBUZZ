@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.ColorSensor; //considering putting cs cod
 
 public class Transfer {
 
-    private DcMotorEx transferMotor = null;
+    private final DcMotorEx transferMotor;
 
     public static double TRANSFER_POWER = 1;
     public Transfer(HardwareMap hardwareMap) {
@@ -18,12 +18,12 @@ public class Transfer {
     }
 
     public void transfer() {
-        transferMotor.setPower(TRANSFER_POWER); //sets servo powers in opposite directions when activated.
+        transferMotor.setPower(TRANSFER_POWER);
     }
     public void flush() {
         transferMotor.setPower(-TRANSFER_POWER);
     }
     public void stop() {
-        transferMotor.setPower(0); //resets to idle when stopped
+        transferMotor.setPower(0);
     }
 }

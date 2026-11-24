@@ -82,7 +82,6 @@ public class Test extends OpMode {
         }
 
         //testing code; remove when no longer relevant
-        //telemetry.addData("ShootPower:", shooter.getMotorPower());
 
         //PIDF adjustment code. Keep for potential future use. Activate sibling code in arm for functionality.
         /*
@@ -108,6 +107,7 @@ public class Test extends OpMode {
 
         telemetry.addData("Current Velocity", shooter.currentVelocity);
         telemetry.addData("Maximum Velocity", shooter.maxVelocity);
+        telemetry.addData("PIDF Power Calculation:", shooter.getMotorCalculation());
 
         //sends all the telemetry data gathered so far
         telemetry.update();
