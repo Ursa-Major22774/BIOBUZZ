@@ -8,8 +8,6 @@ import org.firstinspires.ftc.teamcode.pedro.Constants;
 import com.pedropathing.api.PoseFactory;
 import com.pedropathing.math.Pose;
 
-import com.pedropathing.utils.Timer;
-
 import static com.pedropathing.api.Paths.*;
 import static java.lang.Thread.sleep;
 
@@ -24,10 +22,6 @@ import static com.pedropathing.ivy.pedro.PedroCommands.follow;
 import static com.pedropathing.ivy.groups.Groups.sequential;
  */
 
-import org.firstinspires.ftc.teamcode.subsystems.Intake;
-import org.firstinspires.ftc.teamcode.subsystems.Shooter;
-import org.firstinspires.ftc.teamcode.subsystems.Arm;
-import org.firstinspires.ftc.teamcode.subsystems.Transfer;
 @Autonomous(name="Test Auto")
 public class Auto_Test extends OpMode {
     private Follower follower;
@@ -55,7 +49,7 @@ public class Auto_Test extends OpMode {
         follower.manual(forward, lateral, turn);
         follower.update();
         //Thread.sleep(2000);
-        while (testTimer.milliseconds()<2000) {
+        while (testTimer.milliseconds()<1000) {
             telemetry.addData("Timer:",testTimer.milliseconds());
             telemetry.update();
         }

@@ -8,7 +8,6 @@ import com.pedropathing.follower.Follower;
 import org.firstinspires.ftc.teamcode.pedro.Constants;
 import org.firstinspires.ftc.teamcode.subsystems.Intake;
 import org.firstinspires.ftc.teamcode.subsystems.Shooter;
-import org.firstinspires.ftc.teamcode.subsystems.Arm;
 import org.firstinspires.ftc.teamcode.subsystems.Transfer;
 @TeleOp(name="Testing OpMode")
 public class Test extends OpMode {
@@ -17,12 +16,9 @@ public class Test extends OpMode {
     private Intake intake;
     private Transfer transfer;
     private Shooter shooter;
-    private Arm arm;
     private Follower follower;
 
     double TurningMult = 1;
-
-    int TargetPos = 0;
 
     //@Override
     public void init() {
@@ -31,15 +27,14 @@ public class Test extends OpMode {
         intake = new Intake(hardwareMap);
         transfer = new Transfer(hardwareMap);
         shooter = new Shooter(hardwareMap);
-        arm = new Arm(hardwareMap);
 
         telemetry.addData("Status", "Initialized");
         telemetry.update();
     }
     //@Override
     public void start() {
-        arm.closeGate();
-        arm.zero();
+       // arm.closeGate();
+        //arm.zero();
     }
     //@Override
     public void loop() {
@@ -61,7 +56,6 @@ public class Test extends OpMode {
         //Control Triggers
         //Preferred control map once finalized: LT for intake, RT for shooter, down arrow for ball flush, standard movement controls, Y for arm trim up, A for arm trim down.
         if (gamepad1.left_trigger > 0.1) { //intake trigger
-            arm.zero();
             intake.intake();
             transfer.transfer();
             telemetry.addData("Intake:","Triggered");
@@ -73,33 +67,18 @@ public class Test extends OpMode {
         if (gamepad1.right_trigger > 0.1) { //shooter
             TurningMult = 0.333;
             shooter.shoot();
-            transfer.transfer();
-            arm.openGate();
+            //transfer.transfer();
             telemetry.addData("Shooter:","Triggered");
         } else {
             TurningMult = 1;
             shooter.stop();
-            arm.closeGate();
             telemetry.addData("Shooter:","Stopped");
-        }
-
-        //LM1 Shooter Set Positions:
-        if (gamepad1.dpad_up) {
-            TargetPos = 172;
         }
 
         if (gamepad1.dpad_down) { //Flush balls.
             shooter.stop();
             transfer.flush();
             intake.flush();
-        }
-
-        if (gamepad1.y) { //Move arm.
-            TargetPos += 1;
-        } else if (gamepad1.a) {
-            TargetPos -= 1;
-        } else if (gamepad1.b) {
-            arm.zero();
         }
 
         //testing code; remove when no longer relevant
@@ -123,24 +102,12 @@ public class Test extends OpMode {
             arm.targetAdjustment();
         }
         telemetry.addData("Arm Power", arm.getMotorPower()); */
-        telemetry.addData("Arm Position", arm.getPosition());
-        telemetry.addData("Target Position", TargetPos);
-        telemetry.addData("Sensor?", arm.MagSenseisPressed);
-
-        //reset position if mag sense is active
-        if (arm.MagSenseisPressed) {
-            arm.zero();
-        }
-
-        //sets arm position
-        arm.setPosition(TargetPos);
-
-        //mag sensor test
-        arm.sensorCheck();
 
         //Shooter telemetry (Removable)
-
         telemetry.addData("Shooter Power:",shooter.getMotorPower());
+
+        telemetry.addData("Current Velocity", shooter.currentVelocity);
+        telemetry.addData("Maximum Velocity", shooter.maxVelocity);
 
         //sends all the telemetry data gathered so far
         telemetry.update();

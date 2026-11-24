@@ -6,32 +6,38 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Shooter {
 
-    public static double SHOOTER_POWER = 0.9;
-    public static double IDLE_POWER = 0.333;
+    public static double TARGET_VELOCITY = 1400;
+    public static double IDLE_VELOCITY = 300;
+    public double currentVelocity = 0;
+    public double maxVelocity = 0;
     private final DcMotorEx shooterMotor1;
-    private final DcMotorEx shooterMotor2;
-    //private final PIDFController shooterManager;
+    private final PIDFController shooterManager;
 
     public Shooter(HardwareMap hardwareMap) {
-        //shooterManager = new PIDFController(0,0,0,0.005);
-        shooterMotor1 = hardwareMap.get(DcMotorEx.class, "shooter1");
+        shooterManager = new PIDFController(2.24432,0.22443,0,22.44315);
+        shooterMotor1 = hardwareMap.get(DcMotorEx.class, "flyWheelMotor");
         shooterMotor1.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
         shooterMotor1.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        shooterMotor1.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-        shooterMotor2 = hardwareMap.get(DcMotorEx.class, "shooter2");
-        shooterMotor2.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
-        shooterMotor2.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        shooterMotor2.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        shooterMotor1.setPower(1);
+        //shooterMotor1.setTargetPosition(5); //default PIDF position value reccomendation.
+        shooterMotor1.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+    }
+    public void flatShoot() { //just sets the motors to run at full power.
+        shooterMotor1.setPower(1);
+        currentVelocity = shooterMotor1.getVelocity();
+        if (currentVelocity > maxVelocity) {
+            maxVelocity = currentVelocity;
+        }
+    }
+    public void stop() { //despite the name, motors keep running at idle power.
+        shooterMotor1.setVelocity(IDLE_VELOCITY);
     }
     public void shoot() {
-        shooterMotor1.setPower(-SHOOTER_POWER);
-        shooterMotor2.setPower(SHOOTER_POWER);
-        //shooterMotor1.setVelocity(shooterManager.calculate(shooterMotor1.getVelocity()));
-        //shooterMotor2.setVelocity(shooterManager.calculate(shooterMotor2.getVelocity()));
-    }
-    public void stop() {
-        shooterMotor1.setPower(-IDLE_POWER);
-        shooterMotor2.setPower(IDLE_POWER);
+        shooterMotor1.setVelocity(TARGET_VELOCITY);
+        currentVelocity = shooterMotor1.getVelocity();
+        if (currentVelocity > maxVelocity) {
+            maxVelocity = currentVelocity;
+        }
     }
 
     public double getMotorPower() {
