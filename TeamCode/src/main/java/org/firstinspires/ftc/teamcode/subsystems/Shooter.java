@@ -1,92 +1,52 @@
 package org.firstinspires.ftc.teamcode.subsystems;
 
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import org.firstinspires.ftc.teamcode.resources.PIDFController;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Shooter {
-    //PIDF Adjustment Variables for tuning
-    /*
-    public double kp = 0;
-    public double ki = 0;
-    public double kd = 0;
-    public double kf = 0;
-    public String AdjVar = "kp";
-     */
-
-    //Testing variables
-    public double currentVelocity = 0;
-    public double maxVelocity = 0;
-
-    //Shooting constants
+    // Original test values. Velocity is motor encoder ticks/second, not wheel RPM.
+    // Motor/encoder scale and PIDF tuning come later.
     public static double TARGET_VELOCITY = 1400;
-    public static double IDLE_POWER = 0.333;
-
-    //Hardware
-    private final DcMotorEx shooterMotor1;
-    private final PIDFController shooterManager;
+    public static double IDLE_POWER = 0.50;
+    private final DcMotorEx flywheelMotor;
 
     public Shooter(HardwareMap hardwareMap) {
-        shooterManager = new PIDFController(2.24432,0.22443,0,22.44315); //Untuned, just based on default calculations
-        shooterMotor1 = hardwareMap.get(DcMotorEx.class, "flyWheelMotor");
-        shooterMotor1.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
-        shooterMotor1.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        shooterMotor1.setPower(0.333);
-        shooterMotor1.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
-    }
-    public void flatShoot() { //just sets the motors to run at full power.
-        shooterMotor1.setPower(1);
-        currentVelocity = shooterMotor1.getVelocity();
-        if (currentVelocity > maxVelocity) {
-            maxVelocity = currentVelocity;
-        }
-    }
-    public void stop() { //despite the name, motors keep running at idle power.
-        shooterMotor1.setVelocity(IDLE_POWER);
-    }
-    public void shoot() {
-        shooterMotor1.setPower(shooterManager.calculate(shooterMotor1.getCurrentPosition(),TARGET_VELOCITY));
-        currentVelocity = shooterMotor1.getVelocity();
-        if (currentVelocity > maxVelocity) {
-            maxVelocity = currentVelocity;
-        }
-    }
-    public double getMotorPower() {
-        double MotorVal;
-        MotorVal = shooterMotor1.getPower();
-        return (MotorVal);
-    }
-    public double getMotorCalculation() { //PIDF Testing
-        return shooterManager.calculate(shooterMotor1.getCurrentPosition(),TARGET_VELOCITY);
+        // Preserve the exact hardware-map spelling from the saved robot code.
+        flywheelMotor = hardwareMap.get(DcMotorEx.class, "flyWheelMotor");
+        flywheelMotor.setPower(0);
+        flywheelMotor.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.FLOAT);
+        flywheelMotor.setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
     }
 
-    //PIDF Tuning code. Activate sibling code in TeleOp before running, as well as above variables.
-    //Originally for position-based PIDF. May require rewrites.
-    /*
-    public void valueAdjustmentPos() {
-        if (AdjVar.equals("kp")) {
-            kp += 0.00005;
-        }
-        if (AdjVar.equals("ki")) {
-            ki += 0.00005;
-        }
-        if (AdjVar.equals("kd")) {
-            kd += 0.00005;
-        }
-        if (AdjVar.equals("kf")) {
-            kf += 0.00005;
-        }
-        if (AdjVar.equals("Pos")) {
-            TargetPos += 1;
-        }
-        armController.setP(kp);
-        armController.setI(ki);
-        armController.setD(kd);
-        armController.setF(kf);
+    public void idle() {
+        // Power-based idle does not guarantee a specific RPM.
+        setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        flywheelMotor.setPower(IDLE_POWER);
     }
-    public void valueAdjustmentNeg() {
-        if (AdjVar.equals("kp")) {
-            kp -= 0.00005;
+
+    public void shoot() {
+        // Hub velocity PIDF replaces the old position-based Java calculation.
+        // Use the configured hub coefficients; tuning is a later step.
+        setMode(DcMotorEx.RunMode.RUN_USING_ENCODER);
+        flywheelMotor.setVelocity(TARGET_VELOCITY);
+    }
+
+    public void stop() {
+        setMode(DcMotorEx.RunMode.RUN_WITHOUT_ENCODER);
+        flywheelMotor.setPower(0);
+    }
+
+    public double getMotorPower() {
+        return flywheelMotor.getPower();
+    }
+
+    public double getVelocity() {
+        return flywheelMotor.getVelocity();
+    }
+
+    private void setMode(DcMotorEx.RunMode mode) {
+        if (flywheelMotor.getMode() != mode) {
+            flywheelMotor.setMode(mode);
         }
-     */
+    }
 }

@@ -19,4 +19,10 @@ public class Intake {
     public void stop() {
         intakeMotor.setPower(0);
     }
+
+    // Control Hub encoder port 0 is connected to the turret's bore encoder.
+    // Keep motor ownership here: do not reset this count or use intake velocity control.
+    public int getTurretEncoderTicks() {
+        return intakeMotor.getCurrentPosition();
+    }
 }
