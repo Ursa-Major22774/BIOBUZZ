@@ -16,6 +16,14 @@ public class Turret {
     // Team's measured safe range: 5882 - (-17443). This calibration survives
     // restarts because it is in code; raw endpoint counts do not define a home.
     public static final int CALIBRATED_LEFT_TO_RIGHT_TICKS = 23325;
+    // Provisional position-control values, separate from full-speed manual jogging.
+    public static final double AIM_KP_POWER_PER_DEG = 0.012;
+    public static final double AIM_MAX_POWER = 1.00;
+    // Provisional friction compensation, used only outside the angle tolerance.
+    public static final double AIM_MIN_MOVING_POWER = 0.08;
+    private static final double AIM_TOLERANCE_DEG = 2.0;
+    private static final double AIM_SETTLE_SECONDS = 0.20;
+    private static final int AIM_LIMIT_MARGIN_TICKS = 150;
     private static final double SLOWDOWN_DISTANCE_TICKS = 2500;
     private static final double UNWIND_TIMEOUT_SECONDS = 30;
     private static final double NO_PROGRESS_SECONDS = 1.5;
@@ -30,6 +38,7 @@ public class Turret {
     private boolean hasSample;
     private Integer leftLimit;
     private Integer rightLimit;
+    private Integer forwardReferenceTicks;
     private double power;
     private String status = "OFF";
     private int unwindRequest; // -1: driver held left; +1: driver held right.
@@ -38,10 +47,19 @@ public class Turret {
     private long progressTime;
     private int progressTicks;
     private String fault;
+    private String lastPreAimFault;
     private boolean settling;
     private long settleStartTime;
     private long stationarySince;
     private int settleTicks;
+    private Double aimTargetTicks;
+    private Double aimErrorDeg;
+    private long aimInToleranceSince = -1;
+    private boolean aimSettled;
+    private int aimDirection;
+    private int aimProgressTicks;
+    private long aimProgressTime;
+    private long aimCommandStartTime;
 
     public Turret(HardwareMap hardwareMap) {
         this(hardwareMap, System::nanoTime);
@@ -64,6 +82,7 @@ public class Turret {
     public void saveLeftLimit() {
         if (hasSample) {
             leftLimit = encoderTicks;
+            forwardReferenceTicks = null;
             fault = null;
             stop();
         }
@@ -72,6 +91,7 @@ public class Turret {
     public void saveRightLimit() {
         if (hasSample) {
             rightLimit = encoderTicks;
+            forwardReferenceTicks = null;
             fault = null;
             stop();
         }
@@ -87,17 +107,54 @@ public class Turret {
         }
         leftLimit = encoderTicks;
         rightLimit = (int) right;
+        forwardReferenceTicks = null;
         fault = null;
         stop();
         status = "REFERENCED - SAVED RANGE LOADED";
     }
 
+    /** Operator aligns the shooter with chassis forward, then captures this count. */
+    public void referenceForward() {
+        stop();
+        if (!hasSample || !limitsReady()) {
+            status = "SET LEFT REFERENCE BEFORE FORWARD";
+            return;
+        }
+        if (encoderTicks < Math.min(leftLimit, rightLimit)
+                || encoderTicks > Math.max(leftLimit, rightLimit)) {
+            status = "FORWARD REFERENCE OUTSIDE LIMITS";
+            return;
+        }
+        forwardReferenceTicks = encoderTicks;
+        status = "FORWARD REFERENCE SET";
+    }
+
+    /** Unwrapped mechanical angle: zero forward, positive left/CCW, negative right. */
+    public Double getAngleDegrees() {
+        if (forwardReferenceTicks == null || !limitsReady()) return null;
+        int towardRight = Integer.compare(rightLimit, leftLimit);
+        return -((long) encoderTicks - forwardReferenceTicks) * towardRight
+                * 360.0 / TICKS_PER_TURRET_REVOLUTION;
+    }
+
+    public Integer getForwardReferenceTicks() { return forwardReferenceTicks; }
+
     public boolean limitsReady() {
         return leftLimit != null && rightLimit != null && !leftLimit.equals(rightLimit);
     }
 
+    /** Explicit new operator request retries an aim fault; unwind faults stay latched. */
+    public void retryPreAim() {
+        if (fault != null && fault.startsWith("PRE-AIM FAULT")) {
+            lastPreAimFault = fault;
+            fault = null;
+            stop();
+        }
+    }
+
     /** Hold setup to jog without limits. Normal motion unwinds at an endpoint. */
     public void manual(boolean left, boolean right, boolean setup) {
+        clearAim();
         if (!hasSample) {
             command(0, "NO ENCODER SAMPLE");
             return;
@@ -116,6 +173,9 @@ public class Turret {
             command(0, "LOCKED - SET BOTH LIMITS");
             return;
         }
+        // Actual D-pad motion is a manual override, including after an aim fault.
+        // The no-button path above still preserves the fault for diagnosis.
+        retryPreAim();
         if (fault != null) {
             command(0, fault);
             return;
@@ -147,9 +207,95 @@ public class Turret {
     }
 
     public void stop() {
+        clearAim();
         unwindRequest = 0;
         settling = false;
         command(0, fault == null ? "STOPPED" : fault);
+    }
+
+    /** Hold a legal equivalent of the requested angle; never wrap motor error through a limit. */
+    public void aimAtDegrees(double requestedDegrees) {
+        unwindRequest = 0;
+        settling = false;
+        if (fault != null) { stop(); return; }
+        if (!hasSample || !limitsReady() || forwardReferenceTicks == null) {
+            stop();
+            status = "PRE-AIM BLOCKED - SET LEFT AND FORWARD REFERENCES";
+            return;
+        }
+        if (!Double.isFinite(requestedDegrees)) {
+            stop();
+            status = "PRE-AIM BLOCKED - INVALID GEOMETRY";
+            return;
+        }
+        int towardRight = Integer.compare(rightLimit, leftLimit);
+        double wrappedDegrees = Math.toDegrees(Math.atan2(
+                Math.sin(Math.toRadians(requestedDegrees)), Math.cos(Math.toRadians(requestedDegrees))));
+        double baseTicks = forwardReferenceTicks - wrappedDegrees
+                * TICKS_PER_TURRET_REVOLUTION / 360.0 * towardRight;
+        double low = Math.min(leftLimit, rightLimit) + AIM_LIMIT_MARGIN_TICKS;
+        double high = Math.max(leftLimit, rightLimit) - AIM_LIMIT_MARGIN_TICKS;
+        double minTurn = Math.ceil((low - baseTicks) / TICKS_PER_TURRET_REVOLUTION);
+        double maxTurn = Math.floor((high - baseTicks) / TICKS_PER_TURRET_REVOLUTION);
+        if (minTurn > maxTurn) {
+            stop();
+            status = "PRE-AIM UNREACHABLE - REPOSITION CHASSIS";
+            return;
+        }
+        // Keep the selected revolution continuous as the bearing crosses +/-180.
+        double anchor = aimTargetTicks == null ? encoderTicks : aimTargetTicks;
+        double turn = Math.max(minTurn, Math.min(maxTurn,
+                Math.rint((anchor - baseTicks) / TICKS_PER_TURRET_REVOLUTION)));
+        aimTargetTicks = baseTicks + turn * TICKS_PER_TURRET_REVOLUTION;
+        double tickError = aimTargetTicks - encoderTicks;
+        aimErrorDeg = -tickError * towardRight * 360.0 / TICKS_PER_TURRET_REVOLUTION;
+        long now = clock.getAsLong();
+        if (Math.abs(aimErrorDeg) <= AIM_TOLERANCE_DEG) {
+            if (aimInToleranceSince < 0) aimInToleranceSince = now;
+            aimSettled = (now - aimInToleranceSince) / 1e9 >= AIM_SETTLE_SECONDS;
+            aimDirection = 0;
+            command(0, aimSettled ? "PRE-AIM SETTLED - CELL UNCONFIRMED" : "PRE-AIM SETTLING");
+            return;
+        }
+        aimInToleranceSince = -1;
+        aimSettled = false;
+        int direction = tickError > 0 ? 1 : -1;
+        if (direction != aimDirection) {
+            aimDirection = direction;
+            aimProgressTicks = encoderTicks;
+            aimProgressTime = aimCommandStartTime = now;
+        }
+        long progress = ((long) encoderTicks - aimProgressTicks) * direction;
+        if (progress >= 2) {
+            aimProgressTicks = encoderTicks;
+            aimProgressTime = now;
+        }
+        if ((now - aimCommandStartTime) / 1e9 > 0.30 && progress < -64) {
+            fault = "PRE-AIM FAULT - WRONG ENCODER DIRECTION";
+            lastPreAimFault = fault;
+            stop();
+            return;
+        }
+        if ((now - aimProgressTime) / 1e9 >= NO_PROGRESS_SECONDS) {
+            fault = "PRE-AIM FAULT - NO ENCODER PROGRESS";
+            lastPreAimFault = fault;
+            stop();
+            return;
+        }
+        double effort = Math.max(-AIM_MAX_POWER,
+                Math.min(AIM_MAX_POWER, AIM_KP_POWER_PER_DEG * aimErrorDeg));
+        if (Math.abs(effort) < AIM_MIN_MOVING_POWER) {
+            effort = Math.copySign(AIM_MIN_MOVING_POWER, aimErrorDeg);
+        }
+        command(effort, "PRE-AIM TRACKING - CELL UNCONFIRMED");
+    }
+
+    private void clearAim() {
+        aimTargetTicks = null;
+        aimErrorDeg = null;
+        aimInToleranceSince = -1;
+        aimSettled = false;
+        aimDirection = 0;
     }
 
     private void beginUnwind(int request, int towardRight) {
@@ -267,4 +413,13 @@ public class Turret {
     public String getStatus() { return status; }
     public boolean isUnwinding() { return unwindRequest != 0; }
     public long getUnwindTarget() { return unwindTarget; }
+    public Double getAimErrorDegrees() { return aimErrorDeg; }
+    public Double getAimTargetDegrees() {
+        if (aimTargetTicks == null || forwardReferenceTicks == null || !limitsReady()) return null;
+        return -(aimTargetTicks - forwardReferenceTicks) * Integer.compare(rightLimit, leftLimit)
+                * 360.0 / TICKS_PER_TURRET_REVOLUTION;
+    }
+    public boolean isPreAimSettled() { return aimSettled; }
+    public String getFault() { return fault; }
+    public String getLastPreAimFault() { return lastPreAimFault; }
 }
